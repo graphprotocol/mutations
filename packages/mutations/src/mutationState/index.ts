@@ -14,7 +14,7 @@ import { cloneDeep, merge } from 'lodash'
 
 class StateUpdater<TState, TEventMap extends EventTypeMap> {
   private state: MutationState<TState, TEventMap>
-  private sub?: MutationStateSubject<TState, TEventMap>
+  private subject?: MutationStateSubject<TState, TEventMap>
   private ext?: StateBuilder<TState, TEventMap>
 
   constructor(
@@ -23,7 +23,7 @@ class StateUpdater<TState, TEventMap extends EventTypeMap> {
     subscriber?: MutationStateSubject<TState, TEventMap>,
   ) {
     this.ext = ext
-    this.sub = subscriber
+    this.subject = subscriber
 
     this.state = {
       events: [],
@@ -94,8 +94,8 @@ class StateUpdater<TState, TEventMap extends EventTypeMap> {
   }
 
   private publish() {
-    if (this.sub) {
-      this.sub.next(cloneDeep(this.state))
+    if (this.subject) {
+      this.subject.next(cloneDeep(this.state))
     }
   }
 }

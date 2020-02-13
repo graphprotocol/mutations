@@ -88,7 +88,7 @@ describe('Mutations', () => {
         }
       `,
       context: {
-        _rootSub: observer,
+        _rootSubject: observer,
       },
     })
 
@@ -105,7 +105,7 @@ describe('Mutations', () => {
         }
       `,
       context: {
-        _rootSub: observer,
+        _rootSubject: observer,
       },
     })
 
@@ -127,7 +127,7 @@ describe('Mutations', () => {
         }
       `,
       context: {
-        _rootSub: observer,
+        _rootSubject: observer,
       },
     })
 
@@ -166,12 +166,12 @@ describe('Mutations', () => {
       const observer = new MutationStatesSubject<CoreState, CoreEvents>({})
 
       let context = {
-        _rootSub: observer,
+        _rootSubject: observer,
       }
 
       let progress = 0
 
-      const sub = observer.subscribe((state: MutationStates<CoreState, CoreEvents>) => {
+      const subject = observer.subscribe((state: MutationStates<CoreState, CoreEvents>) => {
         if (state.dispatchStateEvent) {
           progress = state.dispatchStateEvent.progress
         }
@@ -190,11 +190,11 @@ describe('Mutations', () => {
           context = newContext
           return context
         },
-        stateSub: observer,
+       stateSubject: observer,
       })
 
       expect(progress).toEqual(.5)
-      sub.unsubscribe()
+      subject.unsubscribe()
     })
   })
 

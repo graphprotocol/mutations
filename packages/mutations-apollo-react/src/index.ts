@@ -28,7 +28,7 @@ export const useMutation = <
   const [observable] = useState(new MutationStatesSubject<TState, TEventMap>({}))
 
   const graphContext = {
-    _rootSub: observable,
+    _rootSubject: observable,
   }
 
   const updatedOptions = options
