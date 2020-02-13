@@ -38,12 +38,12 @@ export const client = new ApolloClient({
   resolvers: {
     Mutation: {
       testResolve: async (_, __, context) => {
-        if (!context._rootSub) {
+        if (!context._rootSubject) {
           return false
         }
-        context._rootSub.next(statesToPublish[0])
-        context._rootSub.next(statesToPublish[1])
-        context._rootSub.next(statesToPublish[2])
+        context._rootSubject.next(statesToPublish[0])
+        context._rootSubject.next(statesToPublish[1])
+        context._rootSubject.next(statesToPublish[2])
         return true
       },
     },
