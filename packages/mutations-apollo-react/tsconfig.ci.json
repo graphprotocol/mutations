@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./",
+    "rootDir": "src",
     "outDir": "ci",
     "target": "es2015",
     "module": "commonjs",
@@ -13,5 +13,6 @@
     "lib": ["es2015", "es6", "esnext.asynciterable", "dom"]
   },
   "include": ["src/**/*.ts", "example/**/*.ts"],
-  "exclude": ["src/**/__tests__/**/*.ts*"]
+  "exclude": ["src/**/__tests__/**/*.ts*"],
+  "references": [{ "path": "../mutations" }]
 }
