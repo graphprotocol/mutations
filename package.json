@@ -1,0 +1,35 @@
+{
+  "name": "root",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "./packages/*"
+    ]
+  },
+  "scripts": {
+    "build": "yarn build:packages",
+    "build:ci": "yarn build:packages:ci",
+    "build:packages": "lerna exec --scope @graphprotocol/mutations* -- yarn build",
+    "build:packages:ci": "lerna exec --scope @graphprotocol/mutations* -- yarn build:ci",
+    "test": "lerna exec --scope @graphprotocol/mutations* -- yarn test"
+  },
+  "devDependencies": {
+    "@types/graphql": "^14.2.2",
+    "lerna": "^3.15.0",
+    "prettier": "^1.18.2",
+    "tslint": "^5.18.0",
+    "typescript": "^3.5.2"
+  },
+  "dependencies": {
+    "@apollo/react-common": "^3.1.3",
+    "@apollo/react-hooks": "^3.1.3",
+    "apollo-cache-inmemory": "^1.6.5",
+    "apollo-client": "^2.6.8",
+    "apollo-utilities": "1.3.3",
+    "apollo-link": "^1.2.12",
+    "apollo-link-http": "^1.5.15",
+    "apollo-link-state": "^0.4.2",
+    "graphql": "^14.4.2",
+    "graphql-tag": "^2.10.1"
+  }
+}
