@@ -1,0 +1,5 @@
+[book]
+authors = ["Graph Protocol, Inc."]
+multilingual = false
+src = "src"
+title = "Graph Protocol Mutations"
