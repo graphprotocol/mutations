@@ -10,12 +10,15 @@ import React, { useEffect } from 'react'
 import Enzyme, { mount } from 'enzyme'
 import Adapter from 'enzyme-adapter-react-16'
 import { act } from 'react-dom/test-utils'
-import { isEqual } from 'lodash'
+import { ApolloProvider } from '@apollo/react-hooks'
 
-import { TEST_RESOLVER, client, statesToPublish } from './utils'
+import {
+  client,
+  statesToPublish,
+  PUBLISH_STATES,
+  RETURN_TRUE
+} from './utils'
 import { Mutation } from '../'
-import { MutationStates } from '@graphprotocol/mutations'
-import { CoreState } from '@graphprotocol/mutations'
 
 Enzyme.configure({ adapter: new Adapter() })
 
@@ -26,10 +29,10 @@ describe('Mutation', () => {
 
     function Wrapper() {
       return (
-        <Mutation mutation={TEST_RESOLVER} client={client}>
+        <Mutation mutation={PUBLISH_STATES} client={client}>
           {(execute, { data }) => {
             executeFunction = execute
-            if (data && data.testResolve) {
+            if (data && data.publishStates) {
               observerSet = true
             }
             return null
@@ -49,17 +52,17 @@ describe('Mutation', () => {
 
   it('Returns states in dispatch order', async () => {
     let executeFunction: any
-    let states: MutationStates<CoreState>[] = []
+    let states: number[] = []
 
     function Wrapper() {
       return (
-        <Mutation mutation={TEST_RESOLVER} client={client}>
+        <Mutation mutation={PUBLISH_STATES} client={client}>
           {(execute, { state }) => {
             executeFunction = execute
 
             useEffect(() => {
-              if (!isEqual(state, {})) {
-                states.push(state)
+              if (state.publishStates && state.publishStates.progress) {
+                states.push(state.publishStates.progress)
               }
             }, [state])
 
@@ -76,5 +79,37 @@ describe('Mutation', () => {
     })
 
     expect(states).toEqual(statesToPublish)
+  })
+
+  it('Uses ApolloProvider client', async () => {
+    let mutationFunction: Function
+    let mutationData
+
+    function Wrapper() {
+      return (
+        <Mutation mutation={RETURN_TRUE}>
+          {(execute, { data }) => {
+            mutationFunction = execute
+
+            mutationData = data
+            return null
+          }}
+        </Mutation>
+      )
+    }
+
+    mount(
+      <ApolloProvider client={client}>
+        <Wrapper />
+      </ApolloProvider>
+    )
+
+    await act(async () => {
+      mutationFunction()
+    })
+
+    expect(mutationData).toBeTruthy()
+    // @ts-ignore
+    expect(mutationData.returnTrue).toEqual(true)
   })
 })
