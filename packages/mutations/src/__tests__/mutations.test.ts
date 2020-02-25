@@ -29,6 +29,9 @@ const resolvers = {
     testConfig: async (_: any, __: any, context: MutationContext<Config>) => {
       return context.graph.config.value
     },
+    testError: async () => {
+      throw Error(`I'm an error...`)
+    }
   },
 }
 
@@ -123,7 +126,7 @@ describe('Mutations', () => {
   })
 
   it('Executes the same mutation several times in the same query and dispatches object with different states for each', async () => {
-    await client.mutate({
+    const { data } = await client.mutate({
       mutation: gql`
         mutation testResolve {
           testResolve @client
@@ -144,6 +147,57 @@ describe('Mutations', () => {
     expect(latestState.testResolve_1.events).toBeTruthy()
 
     expect(latestState.testResolve).not.toEqual(latestState.testResolve_1)
+  })
+
+  it('Calls custom mutationExecutor', async () => {
+    let called = false
+    const mutations = createMutations({
+      mutations: {
+        resolvers,
+        config,
+      },
+      subgraph: '',
+      node: '',
+      config: {
+        value: '...',
+      },
+      mutationExecutor: (query) => {
+        called = true
+        return { } as any
+      }
+    })
+
+    const mutationLink = createMutationsLink({ mutations })
+
+    const client = new ApolloClient({
+      link: mutationLink,
+      cache: new InMemoryCache(),
+    })
+
+    await client.mutate({
+      mutation: gql`
+        mutation testResolve {
+          testResolve @client
+        }
+      `
+    })
+
+    expect(called).toBeTruthy()
+  })
+
+  it('Catches resolver execution errors', async () => {
+    try {
+      await client.mutate({
+        mutation: gql`
+          mutation testError {
+            testError @client
+          }
+        `
+      })
+      expect('This should never happen').toBe('')
+    } catch (e) {
+      expect(e.message).toBe(`Network error: I'm an error...`)
+    }
   })
 
   describe('mutations.execute(...)', () => {
