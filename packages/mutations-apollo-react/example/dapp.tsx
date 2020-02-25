@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { Mutation, useMutation } from '../src'
 
 import gql from 'graphql-tag'

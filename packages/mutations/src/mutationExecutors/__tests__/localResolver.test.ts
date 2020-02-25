@@ -52,7 +52,7 @@ describe('LocalResolver', () => {
     ).rejects.toThrow()
   })
 
-  /*it('Correctly executes local mutation resolver', async () => {
+  it('Correctly executes local mutation resolver', async () => {
     const { data } = await makePromise(
       execute(link, {
         query: gql`
@@ -68,5 +68,5 @@ describe('LocalResolver', () => {
     if (data) {
       expect(data.testResolve).toEqual(true)
     }
-  })*/
+  })
 })
