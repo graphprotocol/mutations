@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "./",
-    "outDir": "./ci",
+    "outDir": "ci",
     "target": "es2015",
     "module": "commonjs",
     "declaration": true,

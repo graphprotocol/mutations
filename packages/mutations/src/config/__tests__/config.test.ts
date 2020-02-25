@@ -59,6 +59,14 @@ describe('Mutations Config', () => {
     it('Support empty config', () => {
       validateConfig({}, {})
     })
+
+    it('Supports argument functions', () => {
+      validateConfig(
+        { something: () => ({ else: '' }) },
+        { something: { else: (value: string) => value } }
+      )
+      expect(true).toBeTruthy()
+    })
   })
 
   describe('createConfig', () => {

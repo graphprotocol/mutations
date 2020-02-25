@@ -36,14 +36,16 @@ export interface MutationContext<
   }
 }
 
-export interface InternalMutationContext<
+export type InternalMutationContext<
   TConfig extends ConfigGenerators,
   TState = MutationState<CoreState>,
   TEventMap extends EventTypeMap = CoreEvents
-> extends MutationContext<TConfig, TState, TEventMap> {
-  _mutationsCalled: string[]
-  _rootSubject?: MutationStatesSubject<TState, TEventMap>
-  _mutationSubjects: MutationStateSubjects<TState, TEventMap>
+> = MutationContext<TConfig, TState, TEventMap> & {
+  graph: {
+    mutationsCalled: string[]
+    rootSubject?: MutationStatesSubject<TState, TEventMap>
+    mutationSubjects: MutationStateSubjects<TState, TEventMap>
+  }
 }
 
 export interface MutationResolvers<

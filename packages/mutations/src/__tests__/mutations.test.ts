@@ -29,6 +29,9 @@ const resolvers = {
     testConfig: async (_: any, __: any, context: MutationContext<Config>) => {
       return context.graph.config.value
     },
+    testError: async () => {
+      throw Error(`I'm an error...`)
+    }
   },
 }
 
@@ -88,7 +91,9 @@ describe('Mutations', () => {
         }
       `,
       context: {
-        _rootSubject: observer,
+        graph: {
+          rootSubject: observer,
+        },
       },
     })
 
@@ -105,7 +110,9 @@ describe('Mutations', () => {
         }
       `,
       context: {
-        _rootSubject: observer,
+        graph: {
+          rootSubject: observer,
+        },
       },
     })
 
@@ -127,17 +134,70 @@ describe('Mutations', () => {
         }
       `,
       context: {
-        _rootSubject: observer,
+        graph: {
+          rootSubject: observer,
+        },
       },
     })
 
     expect(latestState).toHaveProperty('testResolve')
     expect(latestState.testResolve.events).toBeTruthy()
 
-    expect(latestState).toHaveProperty('testResolve')
+    expect(latestState).toHaveProperty('testResolve_1')
     expect(latestState.testResolve_1.events).toBeTruthy()
 
     expect(latestState.testResolve).not.toEqual(latestState.testResolve_1)
+  })
+
+  it('Calls custom mutationExecutor', async () => {
+    let called = false
+    const mutations = createMutations({
+      mutations: {
+        resolvers,
+        config,
+      },
+      subgraph: '',
+      node: '',
+      config: {
+        value: '...',
+      },
+      mutationExecutor: (query) => {
+        called = true
+        return new Promise((resolve) => resolve({
+          data: { testResolve: true }
+        }))
+      }
+    })
+
+    const client = new ApolloClient({
+      link: createMutationsLink({ mutations }),
+      cache: new InMemoryCache(),
+    })
+
+    await client.mutate({
+      mutation: gql`
+        mutation testResolve {
+          testResolve @client
+        }
+      `
+    })
+
+    expect(called).toBeTruthy()
+  })
+
+  it('Catches resolver execution errors', async () => {
+    try {
+      await client.mutate({
+        mutation: gql`
+          mutation testError {
+            testError @client
+          }
+        `
+      })
+      expect('This should never happen').toBe('')
+    } catch (e) {
+      expect(e.message).toBe(`Network error: I'm an error...`)
+    }
   })
 
   describe('mutations.execute(...)', () => {
@@ -166,7 +226,9 @@ describe('Mutations', () => {
       const observer = new MutationStatesSubject<CoreState, CoreEvents>({})
 
       let context = {
-        _rootSubject: observer,
+        graph: {
+          rootSubject: observer,
+        },
       }
 
       let progress = 0

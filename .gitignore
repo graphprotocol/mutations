@@ -64,4 +64,4 @@ typings/
 dist
 ci
 
-tsconfig.tsbuildinfo
+*.tsbuildinfo

@@ -28,7 +28,9 @@ export const useMutation = <
   const [observable] = useState(new MutationStatesSubject<TState, TEventMap>({}))
 
   const graphContext = {
-    _rootSubject: observable,
+    graph: {
+      rootSubject: observable,
+    },
   }
 
   const updatedOptions = options
@@ -36,8 +38,7 @@ export const useMutation = <
         ...options,
         context: {
           ...options.context,
-          client: options.client,
-          ...graphContext,
+          ...graphContext
         },
       }
     : {
@@ -51,9 +52,7 @@ export const useMutation = <
   useEffect(() => {
     let subscription = observable.subscribe(
       (result: MutationStates<TState, TEventMap>) => {
-        if (result) {
-          setState(result)
-        }
+        setState(result)
       },
     )
     return () => subscription.unsubscribe()
