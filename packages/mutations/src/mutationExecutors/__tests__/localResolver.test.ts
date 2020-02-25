@@ -63,7 +63,10 @@ describe('LocalResolver', () => {
       }),
     )
 
+    expect(data).toBeTruthy()
     expect(data).toHaveProperty('testResolve')
-    expect(data.testResolve).toEqual(true)
+    if (data) {
+      expect(data.testResolve).toEqual(true)
+    }
   })
 })
