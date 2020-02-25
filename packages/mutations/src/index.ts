@@ -66,14 +66,16 @@ const createMutations = <
         TState,
         TEventMap
       >
-      const { _rootSubject, _mutationSubjects, _mutationsCalled } = internalContext
+      const rootSubject = internalContext.graph?.rootSubject
+      const mutationSubjects = internalContext.graph?.mutationSubjects
+      const mutationsCalled = internalContext.graph?.mutationsCalled
 
       // If a root mutation state sub is being used, and we haven't
       // instantiated subscribes for each mutation being executed...
-      if (_rootSubject && _mutationSubjects.length === 0) {
+      if (rootSubject && mutationSubjects.length === 0) {
         // Create observers for each mutation that's called
-        _mutationsCalled.forEach(() => {
-          _mutationSubjects.push(
+        mutationsCalled.forEach(() => {
+          mutationSubjects.push(
             new MutationStateSubject<TState, TEventMap>(
               {} as MutationState<TState, TEventMap>,
             ),
@@ -81,14 +83,14 @@ const createMutations = <
         })
 
         // Subscribe to all of the mutation observers
-        combineLatest(_mutationSubjects).subscribe(values => {
+        combineLatest(mutationSubjects).subscribe(values => {
           const result: MutationStates<TState, TEventMap> = {}
 
           values.forEach((value, key) => {
-            result[_mutationsCalled[key]] = value
+            result[mutationsCalled[key]] = value
           })
 
-          _rootSubject.next(result)
+          rootSubject.next(result)
         })
       }
 
@@ -100,7 +102,7 @@ const createMutations = <
         uuid,
         mutations.stateBuilder,
         // Initialize StateUpdater with a state subscription if one is present
-        _rootSubject ? _mutationSubjects.shift() : undefined,
+        rootSubject ? mutationSubjects.shift() : undefined,
       )
 
       // Create a new context with the state added to context.graph
@@ -120,7 +122,7 @@ const createMutations = <
   return {
     execute: async (
       mutationQuery: MutationQuery<TState, TEventMap>,
-     stateSubject?: MutationStatesSubject<TState, TEventMap>,
+      stateSubject?: MutationStatesSubject<TState, TEventMap>,
     ) => {
       const { setContext, getContext, query } = mutationQuery
 
@@ -131,20 +133,24 @@ const createMutations = <
       }
 
       const context = getContext() as InternalMutationContext<TConfig, TState, TEventMap>
-
-      // Set the context
-      setContext({
+      const graphContext: InternalMutationContext<TConfig, TState, TEventMap> = {
         graph: {
           config: configProperties,
           // This will get overridden by the wrapped resolver above
           state: {} as StateUpdater<TState, TEventMap>,
+          rootSubject: stateSubject ? stateSubject : context.graph?.rootSubject,
+          mutationSubjects: [],
+          mutationsCalled: getUniqueMutations(
+            query,
+            Object.keys(mutations.resolvers.Mutation),
+          ),
         },
-        _rootSubject:stateSubject ?stateSubject : context._rootSubject,
-        _mutationSubjects: [],
-        _mutationsCalled: getUniqueMutations(
-          query,
-          Object.keys(mutations.resolvers.Mutation),
-        ),
+      }
+
+      // Set the context
+      setContext({
+        ...context,
+        ...graphContext,
       })
 
       // Execute the mutation

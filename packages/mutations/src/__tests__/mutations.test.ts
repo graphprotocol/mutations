@@ -88,7 +88,9 @@ describe('Mutations', () => {
         }
       `,
       context: {
-        _rootSubject: observer,
+        graph: {
+          rootSubject: observer,
+        },
       },
     })
 
@@ -105,7 +107,9 @@ describe('Mutations', () => {
         }
       `,
       context: {
-        _rootSubject: observer,
+        graph: {
+          rootSubject: observer,
+        },
       },
     })
 
@@ -127,7 +131,9 @@ describe('Mutations', () => {
         }
       `,
       context: {
-        _rootSubject: observer,
+        graph: {
+          rootSubject: observer,
+        },
       },
     })
 
@@ -166,7 +172,9 @@ describe('Mutations', () => {
       const observer = new MutationStatesSubject<CoreState, CoreEvents>({})
 
       let context = {
-        _rootSubject: observer,
+        graph: {
+          rootSubject: observer,
+        },
       }
 
       let progress = 0
