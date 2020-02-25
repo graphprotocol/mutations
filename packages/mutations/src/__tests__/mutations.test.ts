@@ -211,7 +211,6 @@ describe('Mutations', () => {
           }
         `,
         variables: {},
-        operationName: 'mutation',
         getContext: () => context,
         setContext: (newContext: MutationContext<Config>) => {
           context = newContext
@@ -246,7 +245,6 @@ describe('Mutations', () => {
           }
         `,
         variables: {},
-        operationName: 'mutation',
         getContext: () => context,
         setContext: (newContext: any) => {
           context = newContext

@@ -5,6 +5,8 @@ import {
   MutationContext,
   MutationQuery,
   InternalMutationContext,
+  Query,
+  QueryClient,
 } from './types'
 import { ConfigGenerators, ConfigArguments, ConfigProperties } from './config'
 import { validateConfig, createConfig } from './config'
@@ -19,7 +21,12 @@ import {
   MutationStatesSubject,
 } from './mutationState'
 import { getUniqueMutations } from './utils'
-import { execLocalResolver, MutationExecutor } from './mutationExecutors'
+import {
+  execLocalMutation,
+  execRemoteQuery,
+  MutationExecutor,
+  QueryExecutor
+} from './executors'
 
 import { v4 } from 'uuid'
 import { combineLatest } from 'rxjs'
@@ -34,7 +41,8 @@ interface CreateMutationsOptions<
   subgraph: string
   node: string
   config: ConfigArguments<TConfig>
-  mutationExecutor?: MutationExecutor<TConfig, TState, TEventMap>
+  mutationExecutor?: MutationExecutor
+  queryExecutor?: QueryExecutor
 }
 
 const createMutations = <
@@ -106,13 +114,13 @@ const createMutations = <
       )
 
       // Create a new context with the state added to context.graph
-      const newContext = {
+      const newContext: MutationContext<TConfig, TState, TEventMap> = {
         ...context,
         graph: {
           ...context.graph,
           state,
         },
-      } as MutationContext<TConfig, TState, TEventMap>
+      }
 
       // Execute the resolver
       return await resolver(source, args, newContext, info)
@@ -133,11 +141,19 @@ const createMutations = <
       }
 
       const context = getContext() as InternalMutationContext<TConfig, TState, TEventMap>
+
+      // If context.client doesn't exist (ApolloClient only feature), create
+      // our own query handler for the mutation resolvers to use
+      const client: QueryClient = context.client ? context.client : {
+        query: (query: Query) => execRemoteQuery(query, `${node}/subgraphs/name/${subgraph}`)
+      }
+
       const graphContext: InternalMutationContext<TConfig, TState, TEventMap> = {
         graph: {
           config: configProperties,
           // This will get overridden by the wrapped resolver above
           state: {} as StateUpdater<TState, TEventMap>,
+          client,
           rootSubject: stateSubject ? stateSubject : context.graph?.rootSubject,
           mutationSubjects: [],
           mutationsCalled: getUniqueMutations(
@@ -157,7 +173,7 @@ const createMutations = <
       if (mutationExecutor) {
         return await mutationExecutor(mutationQuery, mutations.resolvers)
       } else {
-        return await execLocalResolver(mutationQuery, mutations.resolvers)
+        return await execLocalMutation(mutationQuery, mutations.resolvers)
       }
     },
     configure: async (config: ConfigArguments<TConfig>) => {
@@ -190,7 +206,6 @@ const createMutationsLink = <
         .execute({
           query: operation.query,
           variables: operation.variables,
-          operationName: operation.operationName,
           setContext: setContext,
           getContext: getContext,
         })
@@ -207,7 +222,7 @@ export { createMutations, createMutationsLink }
 
 export { MutationContext, MutationResolvers, Mutations } from './types'
 
-export { MutationExecutor } from './mutationExecutors'
+export { MutationExecutor } from './executors'
 
 export {
   CoreState,

@@ -1,4 +1,4 @@
-import localResolver from '../localResolver'
+import localResolver from '../mutation/localResolver'
 
 import { ApolloLink, execute, makePromise, Operation, Observable } from 'apollo-link'
 import gql from 'graphql-tag'
@@ -22,7 +22,6 @@ describe('LocalResolver', () => {
             {
               query: operation.query,
               variables: operation.variables,
-              operationName: operation.operationName,
               setContext: operation.setContext as any,
               getContext: operation.getContext as any,
             },
