@@ -149,7 +149,7 @@ describe('Mutations', () => {
     expect(latestState.testResolve).not.toEqual(latestState.testResolve_1)
   })
 
-  /*it('Calls custom mutationExecutor', async () => {
+  it('Calls custom mutationExecutor', async () => {
     let called = false
     const mutations = createMutations({
       mutations: {
@@ -163,14 +163,14 @@ describe('Mutations', () => {
       },
       mutationExecutor: (query) => {
         called = true
-        return { } as any
+        return new Promise((resolve) => resolve({
+          data: { testResolve: true }
+        }))
       }
     })
 
-    const mutationLink = createMutationsLink({ mutations })
-
     const client = new ApolloClient({
-      link: mutationLink,
+      link: createMutationsLink({ mutations }),
       cache: new InMemoryCache(),
     })
 
@@ -198,7 +198,7 @@ describe('Mutations', () => {
     } catch (e) {
       expect(e.message).toBe(`Network error: I'm an error...`)
     }
-  })*/
+  })
 
   describe('mutations.execute(...)', () => {
     it('Correctly executes mutation without ApolloLink', async () => {

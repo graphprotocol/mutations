@@ -14,7 +14,7 @@ const resolvers = {
 let link: ApolloLink
 
 describe('LocalResolver', () => {
-  /*beforeAll(() => {
+  beforeAll(() => {
     link = new ApolloLink(
       (operation: Operation) =>
         new Observable(observer => {
@@ -68,5 +68,5 @@ describe('LocalResolver', () => {
     if (data) {
       expect(data.testResolve).toEqual(true)
     }
-  })*/
+  })
 })
