@@ -126,7 +126,7 @@ describe('Mutations', () => {
   })
 
   it('Executes the same mutation several times in the same query and dispatches object with different states for each', async () => {
-    const { data } = await client.mutate({
+    await client.mutate({
       mutation: gql`
         mutation testResolve {
           testResolve @client
@@ -143,7 +143,7 @@ describe('Mutations', () => {
     expect(latestState).toHaveProperty('testResolve')
     expect(latestState.testResolve.events).toBeTruthy()
 
-    expect(latestState).toHaveProperty('testResolve')
+    expect(latestState).toHaveProperty('testResolve_1')
     expect(latestState.testResolve_1.events).toBeTruthy()
 
     expect(latestState.testResolve).not.toEqual(latestState.testResolve_1)
