@@ -149,7 +149,7 @@ describe('Mutations', () => {
     expect(latestState.testResolve).not.toEqual(latestState.testResolve_1)
   })
 
-  it('Calls custom mutationExecutor', async () => {
+  /*it('Calls custom mutationExecutor', async () => {
     let called = false
     const mutations = createMutations({
       mutations: {
@@ -198,7 +198,7 @@ describe('Mutations', () => {
     } catch (e) {
       expect(e.message).toBe(`Network error: I'm an error...`)
     }
-  })
+  })*/
 
   describe('mutations.execute(...)', () => {
     it('Correctly executes mutation without ApolloLink', async () => {
