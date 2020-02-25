@@ -52,9 +52,7 @@ export const useMutation = <
   useEffect(() => {
     let subscription = observable.subscribe(
       (result: MutationStates<TState, TEventMap>) => {
-        if (result) {
-          setState(result)
-        }
+        setState(result)
       },
     )
     return () => subscription.unsubscribe()

@@ -112,4 +112,18 @@ describe('Mutation', () => {
     // @ts-ignore
     expect(mutationData.returnTrue).toEqual(true)
   })
+
+  it('Handles the no children case', async () => {
+    function Wrapper() {
+      return (
+        <Mutation mutation={RETURN_TRUE} client={client} children={null as any} />
+      )
+    }
+
+    mount(
+      <Wrapper />
+    )
+
+    expect(true).toBeTruthy()
+  })
 })
