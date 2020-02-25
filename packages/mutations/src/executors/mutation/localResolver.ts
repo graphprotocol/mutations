@@ -25,7 +25,7 @@ const localResolver: MutationExecutor = <
 
   // Reuse the cache from the client
   const context = mutationQuery.getContext()
-  const client = context.client
+  const client = context.graph?.client
   let cache
 
   if (client && client.cache) {
