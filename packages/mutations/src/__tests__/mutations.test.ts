@@ -266,7 +266,7 @@ describe('Mutations', () => {
           context = newContext
           return context
         },
-       stateSubject: observer,
+        stateSubject: observer,
       })
 
       expect(progress).toEqual(.5)

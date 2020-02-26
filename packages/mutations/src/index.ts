@@ -130,9 +130,8 @@ const createMutations = <
   return {
     execute: async (
       mutationQuery: MutationQuery<TState, TEventMap>,
-      stateSubject?: MutationStatesSubject<TState, TEventMap>,
     ) => {
-      const { setContext, getContext, query } = mutationQuery
+      const { setContext, getContext, query, stateSubject } = mutationQuery
 
       // Create the config instance during
       // the first mutation execution
