@@ -1,6 +1,12 @@
 import localResolver from '../mutation/localResolver'
 
-import { ApolloLink, execute, makePromise, Operation, Observable } from 'apollo-link'
+import {
+  ApolloLink,
+  execute,
+  makePromise,
+  Operation,
+  Observable
+} from 'apollo-link'
 import gql from 'graphql-tag'
 
 const resolvers = {

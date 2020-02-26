@@ -93,5 +93,5 @@ export interface Query {
 export type QueryResult = ExecutionResult
 
 export interface QueryClient {
-  query(quer: Query): Promise<QueryResult>
+  query(query: Query): Promise<QueryResult>
 }
