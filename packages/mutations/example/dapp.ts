@@ -77,6 +77,6 @@ const main = async () => {
       return context
     },
     getContext: () => context,
-   stateSubject: subject,
+    stateSubject: subject,
   })
 }
