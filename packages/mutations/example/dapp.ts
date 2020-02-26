@@ -72,7 +72,6 @@ const main = async () => {
     variables: {
       input: '...',
     },
-    operationName: 'mutation',
     setContext: (newContext: Context) => {
       context = newContext
       return context

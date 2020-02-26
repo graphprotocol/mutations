@@ -33,6 +33,7 @@ export interface MutationContext<
   graph: {
     config: ConfigProperties<TConfig>
     state: StateUpdater<TState, TEventMap>
+    client: QueryClient
   }
 }
 
@@ -66,12 +67,11 @@ export interface MutationQuery<
   TEventMap extends EventTypeMap = CoreEvents
 > {
   query: DocumentNode
-  variables: Record<string, any>
-  operationName: string
+  variables?: Record<string, any>
   extensions?: Record<string, any>
   setContext: (context: any) => any
   getContext: () => any
- stateSubject?: MutationStatesSubject<TState, TEventMap>
+  stateSubject?: MutationStatesSubject<TState, TEventMap>
 }
 
 export type MutationResult = ExecutionResult
@@ -83,4 +83,15 @@ export interface Mutations<
 > {
   execute: (query: MutationQuery<TState, TEventMap>) => Promise<MutationResult>
   configure: (config: ConfigArguments<TConfig>) => Promise<void>
+}
+
+export interface Query {
+  query: DocumentNode
+  variables?: Record<string, any>
+}
+
+export type QueryResult = ExecutionResult
+
+export interface QueryClient {
+  query(query: Query): Promise<QueryResult>
 }

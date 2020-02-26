@@ -31,7 +31,23 @@ const resolvers = {
     },
     testError: async () => {
       throw Error(`I'm an error...`)
-    }
+    },
+    testQuery: async (_: any, __: any, context: MutationContext<Config>) => {
+      try {
+        await context.graph.client.query({
+          query: gql`
+            query testQuery {
+              testQuery {
+                id
+              }
+            }
+          `
+        })
+        return false
+      } catch (e) {
+        return e.message.indexOf('ECONNREFUSED') > -1
+      }
+    },
   },
 }
 
@@ -52,8 +68,8 @@ describe('Mutations', () => {
         resolvers,
         config,
       },
-      subgraph: '',
-      node: '',
+      subgraph: 'test',
+      node: 'http://localhost:5000',
       config: {
         value: '...',
       },
@@ -211,7 +227,6 @@ describe('Mutations', () => {
           }
         `,
         variables: {},
-        operationName: 'mutation',
         getContext: () => context,
         setContext: (newContext: MutationContext<Config>) => {
           context = newContext
@@ -246,7 +261,6 @@ describe('Mutations', () => {
           }
         `,
         variables: {},
-        operationName: 'mutation',
         getContext: () => context,
         setContext: (newContext: any) => {
           context = newContext
@@ -257,6 +271,26 @@ describe('Mutations', () => {
 
       expect(progress).toEqual(.5)
       subject.unsubscribe()
+    })
+
+    it('Correctly queries using the remote executor', async () => {
+      let context = {} as MutationContext<Config>
+
+      const { data } = await mutations.execute({
+        query: gql`
+          mutation testQuery {
+            testQuery @client
+          }
+        `,
+        variables: {},
+        getContext: () => context,
+        setContext: (newContext: MutationContext<Config>) => {
+          context = newContext
+          return context
+        },
+      })
+
+      expect(data && data.testQuery).toEqual(true)
     })
   })
 
