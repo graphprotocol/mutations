@@ -18,7 +18,6 @@ import {
   MutationState,
   MutationStates,
   MutationStateSubject,
-  MutationStatesSubject,
 } from './mutationState'
 import { getUniqueMutations } from './utils'
 import {
@@ -31,6 +30,7 @@ import {
 import { v4 } from 'uuid'
 import { combineLatest } from 'rxjs'
 import { ApolloLink, Operation, Observable } from 'apollo-link'
+import { buildSchema } from 'graphql'
 
 interface CreateMutationsOptions<
   TConfig extends ConfigGenerators,
@@ -60,15 +60,31 @@ const createMutations = <
   // One config instance for all mutation executions
   let configProperties: ConfigProperties<TConfig> | undefined = undefined
 
-  // Wrap each resolver and add a mutation state instance to the context
-  const resolverNames = Object.keys(mutations.resolvers.Mutation)
+  // Build the schema from the source
+  let schema = buildSchema(mutations.schema)
 
-  for (let i = 0; i < resolverNames.length; i++) {
-    const name = resolverNames[i]
-    const resolver = mutations.resolvers.Mutation[name]
+  // If there's no Query type, add it to avoid execution errors
+  if (!schema.getQueryType()) {
+    const schemaWithQuery = mutations.schema + `type Query { dummy: String }`
+    schema = buildSchema(schemaWithQuery)
+  }
+
+  const mutation = schema.getMutationType()
+
+  if (!mutation) {
+    throw Error(`type Mutation { ... } missing from the mutations module's schema`)
+  }
+
+  // Wrap each resolver and add a mutation state instance to the context
+  const mutationFields = mutation.getFields()
+  const mutationNames = Object.keys(mutationFields)
+
+  for (const mutationName of mutationNames) {
+    const field = mutationFields[mutationName]
+    const resolver = mutations.resolvers.Mutation[mutationName]
 
     // Wrap the resolver
-    mutations.resolvers.Mutation[name] = async (source, args, context, info) => {
+    field.resolve = async (source, args, context, info) => {
       const internalContext = context as InternalMutationContext<
         TConfig,
         TState,
@@ -170,9 +186,9 @@ const createMutations = <
 
       // Execute the mutation
       if (mutationExecutor) {
-        return await mutationExecutor(mutationQuery, mutations.resolvers)
+        return await mutationExecutor(mutationQuery, schema)
       } else {
-        return await execLocalMutation(mutationQuery, mutations.resolvers)
+        return await execLocalMutation(mutationQuery, schema)
       }
     },
     configure: async (config: ConfigArguments<TConfig>) => {

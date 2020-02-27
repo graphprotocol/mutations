@@ -14,6 +14,17 @@ import {
 } from '../'
 import { MutationStatesSubject } from '../mutationState'
 
+const schema = `
+  type Mutation {
+    testResolve: Boolean!
+    secondTestResolve: Boolean!
+    dispatchStateEvent: Boolean!
+    testConfig: String!
+    testError: Boolean!
+    testQuery: Boolean!
+  }
+`
+
 const resolvers = {
   Mutation: {
     testResolve: async () => {
@@ -67,6 +78,7 @@ describe('Mutations', () => {
       mutations: {
         resolvers,
         config,
+        schema,
       },
       subgraph: 'test',
       node: 'http://localhost:5000',
@@ -91,7 +103,7 @@ describe('Mutations', () => {
     const { data } = await client.mutate({
       mutation: gql`
         mutation testResolve {
-          testResolve @client
+          testResolve
         }
       `,
     })
@@ -103,7 +115,7 @@ describe('Mutations', () => {
     await client.mutate({
       mutation: gql`
         mutation testResolve {
-          testResolve @client
+          testResolve
         }
       `,
       context: {
@@ -121,8 +133,8 @@ describe('Mutations', () => {
     await client.mutate({
       mutation: gql`
         mutation testResolve {
-          testResolve @client
-          secondTestResolve @client
+          testResolve
+          secondTestResolve
         }
       `,
       context: {
@@ -142,11 +154,12 @@ describe('Mutations', () => {
   })
 
   it('Executes the same mutation several times in the same query and dispatches object with different states for each', async () => {
+    console.log("HERERERERE")
     await client.mutate({
       mutation: gql`
         mutation testResolve {
-          testResolve @client
-          testResolve @client
+          testResolve
+          testResolve
         }
       `,
       context: {
@@ -156,13 +169,15 @@ describe('Mutations', () => {
       },
     })
 
-    expect(latestState).toHaveProperty('testResolve')
-    expect(latestState.testResolve.events).toBeTruthy()
+    console.log(latestState)
 
     expect(latestState).toHaveProperty('testResolve_1')
     expect(latestState.testResolve_1.events).toBeTruthy()
 
-    expect(latestState.testResolve).not.toEqual(latestState.testResolve_1)
+    expect(latestState).toHaveProperty('testResolve_2')
+    expect(latestState.testResolve_2.events).toBeTruthy()
+
+    expect(latestState.testResolve_1).not.toEqual(latestState.testResolve_2)
   })
 
   it('Calls custom mutationExecutor', async () => {
@@ -171,6 +186,7 @@ describe('Mutations', () => {
       mutations: {
         resolvers,
         config,
+        schema,
       },
       subgraph: '',
       node: '',
@@ -193,7 +209,7 @@ describe('Mutations', () => {
     await client.mutate({
       mutation: gql`
         mutation testResolve {
-          testResolve @client
+          testResolve
         }
       `
     })
@@ -206,13 +222,13 @@ describe('Mutations', () => {
       await client.mutate({
         mutation: gql`
           mutation testError {
-            testError @client
+            testError
           }
         `
       })
       expect('This should never happen').toBe('')
     } catch (e) {
-      expect(e.message).toBe(`Network error: I'm an error...`)
+      expect(e.message).toBe(`GraphQL error: I'm an error...`)
     }
   })
 
@@ -223,7 +239,7 @@ describe('Mutations', () => {
       const { data } = await mutations.execute({
         query: gql`
           mutation testResolve {
-            testResolve @client
+            testResolve
           }
         `,
         variables: {},
@@ -257,7 +273,7 @@ describe('Mutations', () => {
       await mutations.execute({
         query: gql`
           mutation TestResolve {
-            dispatchStateEvent @client
+            dispatchStateEvent
           }
         `,
         variables: {},
@@ -279,7 +295,7 @@ describe('Mutations', () => {
       const { data } = await mutations.execute({
         query: gql`
           mutation testQuery {
-            testQuery @client
+            testQuery
           }
         `,
         variables: {},
@@ -300,7 +316,7 @@ describe('Mutations', () => {
         const { data } = await client.mutate({
           mutation: gql`
             mutation testConfig {
-              testConfig @client
+              testConfig
             }
           `,
         })
@@ -316,7 +332,7 @@ describe('Mutations', () => {
         const { data } = await client.mutate({
           mutation: gql`
             mutation testConfig {
-              testConfig @client
+              testConfig
             }
           `,
         })
