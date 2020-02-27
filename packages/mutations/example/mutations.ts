@@ -6,6 +6,12 @@ import {
   ProgressUpdateEvent,
 } from '../src'
 
+const schema = `
+  type Mutation {
+    example
+  }
+`
+
 const resolvers = {
   Mutation: {
     example: () => {},
@@ -71,6 +77,7 @@ const stateBuilder: StateBuilder<State, EventMap> = {
 export default {
   resolvers,
   config,
+  schema,
   stateBuilder,
 }
 

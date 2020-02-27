@@ -5,7 +5,7 @@ import gql from 'graphql-tag'
 
 const EXAMPLE = gql`
   mutation example($input: String!) {
-    example(input: $input) @client {
+    example(input: $input) {
       output
     }
   }

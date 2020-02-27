@@ -1,20 +1,19 @@
 import {
   MutationQuery,
-  MutationResolvers,
   MutationResult,
   Query,
   QueryResult
 } from '../types'
-import { ConfigGenerators } from '../config'
 import { EventTypeMap } from '../mutationState'
 
+import { GraphQLSchema } from 'graphql'
+
 export type MutationExecutor = <
-  TConfig extends ConfigGenerators,
   TState,
   TEventMap extends EventTypeMap
 > (
   query: MutationQuery<TState, TEventMap>,
-  resolvers: MutationResolvers<TConfig, TState, TEventMap>,
+  schema: GraphQLSchema,
 ) => Promise<MutationResult>
 
 export type QueryExecutor = (
