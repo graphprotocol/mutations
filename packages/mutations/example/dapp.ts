@@ -32,7 +32,7 @@ const link = createMutationsLink({ mutations })
 // Execute a mutation without Apollo
 const EXAMPLE = gql`
   mutation Example($input: String!) {
-    example(input: $input) @client {
+    example(input: $input) {
       output
     }
   }

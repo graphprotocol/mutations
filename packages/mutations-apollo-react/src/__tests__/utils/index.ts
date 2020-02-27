@@ -38,12 +38,12 @@ export const client = new ApolloClient({
 
 export const PUBLISH_STATES = gql`
   mutation publishStates {
-    publishStates @client
+    publishStates
   }
 `
 
 export const RETURN_TRUE = gql`
   mutation returnTrue {
-    returnTrue @client
+    returnTrue
   }
 `

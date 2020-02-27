@@ -21,6 +21,7 @@ export interface MutationsModule<
 > {
   resolvers: MutationResolvers<TConfig, TState, TEventMap>
   config: TConfig
+  schema: string
   stateBuilder?: StateBuilder<TState, TEventMap>
 }
 

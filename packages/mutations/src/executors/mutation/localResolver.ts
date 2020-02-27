@@ -1,51 +1,54 @@
 import { MutationExecutor } from '../types'
-import { MutationQuery, MutationResult, MutationResolvers } from '../../types'
-import { hasDirectives } from '../../utils'
-import { ConfigGenerators } from '../../config'
+import { MutationQuery, MutationResult } from '../../types'
 import { EventTypeMap } from '../../mutationState'
 
-import { execute, makePromise } from 'apollo-link'
-import { withClientState } from 'apollo-link-state'
-import { InMemoryCache } from 'apollo-cache-inmemory'
+import { execute, GraphQLSchema, OperationDefinitionNode, FieldNode } from 'graphql'
 
 const localResolver: MutationExecutor = <
-  TConfig extends ConfigGenerators,
   TState,
   TEventMap extends EventTypeMap
 >(
-  mutationQuery: MutationQuery<TState, TEventMap>,
-  resolvers: MutationResolvers<TConfig, TState, TEventMap>,
+  query: MutationQuery<TState, TEventMap>,
+  schema: GraphQLSchema,
 ): Promise<MutationResult> => {
-  // @client directive must be used
-  if (!hasDirectives(['client'], mutationQuery.query)) {
-    throw new Error(
-      `Mutation is missing client directive: ${mutationQuery.query}`,
-    )
+
+  const results: Promise<any>[] = []
+  const queryDefs = query.query.definitions
+
+  for (const def of queryDefs) {
+    if (def.kind === 'OperationDefinition') {
+      const operation = def as OperationDefinitionNode
+
+      // Save a copy of the original field selections
+      const selectionSet = operation.selectionSet
+      const selections = [...selectionSet.selections]
+
+      for (const selection of selections) {
+
+        // Augment the original document, allowing us to query
+        // one field at a time
+        selectionSet.selections = [selection]
+
+        // TODO: handle aggregating results + fix state aggregation + update docs
+        results.push(
+          new Promise(async (resolve) => {
+            resolve(
+              await execute({
+                schema: schema,
+                document: query.query,
+                contextValue: query.getContext(),
+                variableValues: query.variables,
+              })
+            )
+          })
+        )
+      }
+    } else {
+      throw Error(`Unrecognized DefinitionNode.kind ${def.kind}`)
+    }
   }
 
-  // Reuse the cache from the client
-  const context = mutationQuery.getContext()
-  const client = context.graph?.client
-  let cache
-
-  if (client && client.cache) {
-    cache = client.cache
-  } else {
-    cache = new InMemoryCache()
-  }
-
-  const link = withClientState({
-    cache,
-    resolvers,
-  })
-
-  return makePromise(
-    execute(link, {
-      query: mutationQuery.query,
-      variables: mutationQuery.variables,
-      context: mutationQuery.getContext(),
-    }),
-  )
+  return Promise.all(results)
 }
 
 export default localResolver
