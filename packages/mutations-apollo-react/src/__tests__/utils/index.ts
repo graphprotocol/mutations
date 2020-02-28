@@ -5,6 +5,13 @@ import { createMutations, createMutationsLink, MutationContext } from '@graphpro
 
 export const statesToPublish = [ 0.1, 0.2, 0.3 ]
 
+const schema = `
+  type Mutation {
+    publishStates: Boolean!
+    returnTrue: Boolean!
+  }
+`
+
 const resolvers = {
   Mutation: {
     publishStates: async (_: any, __: any, context: MutationContext<{}>) => {
@@ -23,6 +30,7 @@ const mutations = createMutations({
   mutations: {
     resolvers,
     config: {},
+    schema,
   },
   config: {},
   node: "",
