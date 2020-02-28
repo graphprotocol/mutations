@@ -20,7 +20,7 @@ const localResolver: MutationExecutor = <
   query: MutationQuery<TState, TEventMap>,
   schema: GraphQLSchema,
 ): Promise<MutationResult> => {
-  return new Promise(async (resolve) => {
+  return new Promise(async (resolve, reject) => {
 
     const results: MutationResult = { }
     const mutationCount: { [mutation: string]: number } = { }
@@ -29,7 +29,8 @@ const localResolver: MutationExecutor = <
     // For each mutation query definition
     for (const def of queryDefs) {
       if (def.kind !== 'OperationDefinition') {
-        throw Error(`Unrecognized DefinitionNode.kind ${def.kind}`)
+        reject(Error(`Unrecognized DefinitionNode.kind ${def.kind}`))
+        return
       }
 
       const operation = def as OperationDefinitionNode
@@ -41,7 +42,8 @@ const localResolver: MutationExecutor = <
       // For each mutation selected
       for (const selection of selections) {
         if (selection.kind !== 'Field') {
-          throw Error(`Unrecognized SelectionNode.kind ${selection.kind}`)
+          reject(Error(`Unrecognized SelectionNode.kind ${selection.kind}`))
+          return
         }
 
         if (!results.data) {

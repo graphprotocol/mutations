@@ -20,22 +20,28 @@ const schema = `
   }
 `
 
+const invalidSchema = `
+  type Mutationsss {
+    testResolve: Boolean!
+  }
+`
+
 const resolvers = {
   Mutation: {
-    testResolve: async () => {
+    testResolve: () => {
       return true
     },
-    secondTestResolve: async () => {
+    secondTestResolve: () => {
       return true
     },
     dispatchStateEvent: async (_: any, __: any, context: MutationContext<Config>) => {
       await context.graph.state.dispatch('PROGRESS_UPDATE', { value: .5 })
       return true
     },
-    testConfig: async (_: any, __: any, context: MutationContext<Config>) => {
+    testConfig: (_: any, __: any, context: MutationContext<Config>) => {
       return context.graph.config.value
     },
-    testError: async () => {
+    testError: () => {
       throw Error(`I'm an error...`)
     },
     testQuery: async (_: any, __: any, context: MutationContext<Config>) => {
@@ -108,6 +114,29 @@ describe('Mutations', () => {
     })
 
     expect(data && data.testResolve).toEqual(true)
+  })
+
+  it('Fails when type Mutation is missing from the schema', async () => {
+    try {
+      createMutations({
+        mutations: {
+          resolvers,
+          config,
+          schema: invalidSchema,
+        },
+        subgraph: 'test',
+        node: 'http://localhost:5000',
+        config: {
+          value: '...',
+        },
+      })
+
+      expect('').toBe('This should never happen...')
+    } catch (e) {
+      expect(e.message).toBe(
+        `type Mutation { ... } missing from the mutations module's schema`
+      )
+    }
   })
 
   it('Correctly wraps resolvers and formats observer results to object with mutation name as key and state as value', async () => {
