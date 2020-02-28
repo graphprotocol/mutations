@@ -1,8 +1,19 @@
 import { MutationExecutor } from '../types'
-import { MutationQuery, MutationResult } from '../../types'
+import {
+  MutationQuery,
+  MutationResult,
+} from '../../types'
 import { EventTypeMap } from '../../mutationState'
+import { isPromise } from '../../utils'
 
-import { execute, GraphQLSchema, OperationDefinitionNode, FieldNode } from 'graphql'
+import {
+  execute,
+  FieldNode,
+  GraphQLError,
+  GraphQLSchema,
+  OperationDefinitionNode
+} from 'graphql'
+import { requiredSubselectionMessage } from 'graphql/validation/rules/ScalarLeafs'
 
 const localResolver: MutationExecutor = <
   TState,
@@ -11,44 +22,85 @@ const localResolver: MutationExecutor = <
   query: MutationQuery<TState, TEventMap>,
   schema: GraphQLSchema,
 ): Promise<MutationResult> => {
+  return new Promise(async (resolve) => {
 
-  const results: Promise<any>[] = []
-  const queryDefs = query.query.definitions
+    const results: MutationResult = { }
+    const mutationCount: { [mutation: string]: number } = { }
+    const queryDefs = query.query.definitions
 
-  for (const def of queryDefs) {
-    if (def.kind === 'OperationDefinition') {
+    // For each mutation query definition
+    for (const def of queryDefs) {
+      if (def.kind !== 'OperationDefinition') {
+        throw Error(`Unrecognized DefinitionNode.kind ${def.kind}`)
+      }
+
       const operation = def as OperationDefinitionNode
 
       // Save a copy of the original field selections
       const selectionSet = operation.selectionSet
       const selections = [...selectionSet.selections]
 
+      // For each mutation selected
       for (const selection of selections) {
+        if (selection.kind !== 'Field') {
+          throw Error(`Unrecognized SelectionNode.kind ${selection.kind}`)
+        }
+
+        if (!results.data) {
+          results.data = { }
+        }
+
+        // Get the mutation name
+        const field = selection as FieldNode
+        const mutationName = field.name.value
+
+        // Determine what this mutation execution's result
+        // name should be: mutationName OR '${mutationName}_${number}
+        let resultKey
+        if (results.data[mutationName]) {
+          if (!mutationCount[mutationName]) {
+            mutationCount[mutationName] = 1
+          }
+
+          resultKey = `${mutationName}_${mutationCount[mutationName]++}`
+        } else {
+          resultKey = mutationName
+        }
 
         // Augment the original document, allowing us to query
         // one field at a time
         selectionSet.selections = [selection]
 
-        // TODO: handle aggregating results + fix state aggregation + update docs
-        results.push(
-          new Promise(async (resolve) => {
-            resolve(
-              await execute({
-                schema: schema,
-                document: query.query,
-                contextValue: query.getContext(),
-                variableValues: query.variables,
-              })
-            )
-          })
-        )
-      }
-    } else {
-      throw Error(`Unrecognized DefinitionNode.kind ${def.kind}`)
-    }
-  }
+        const result = execute({
+          schema: schema,
+          document: query.query,
+          contextValue: query.getContext(),
+          variableValues: query.variables,
+        })
 
-  return Promise.all(results)
+        let mutationResult
+        if (isPromise(result)) {
+          mutationResult = await result
+        } else {
+          mutationResult = result as MutationResult
+        }
+
+        if (mutationResult.data) {
+          results.data[resultKey] = mutationResult.data[mutationName]
+        }
+
+        if (mutationResult.errors) {
+          if (!results.errors) {
+            results.errors = []
+          }
+          results.errors = [...results.errors, ...mutationResult.errors]
+        }
+        results
+      }
+    }
+
+    resolve(results)
+  })
 }
 
 export default localResolver
