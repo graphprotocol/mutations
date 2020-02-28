@@ -100,7 +100,7 @@ describe('Mutations', () => {
   })
 
   it('Successfully creates mutations, link and executes mutations with it. No observer provided', async () => {
-    const result = await client.mutate({
+    const { data } = await client.mutate({
       mutation: gql`
         mutation testResolve {
           testResolve
@@ -108,7 +108,7 @@ describe('Mutations', () => {
       `,
     })
 
-    expect(result.data && result.data.testResolve).toEqual(true)
+    expect(data && data.testResolve).toEqual(true)
   })
 
   it('Correctly wraps resolvers and formats observer results to object with mutation name as key and state as value', async () => {
@@ -130,7 +130,7 @@ describe('Mutations', () => {
   })
 
   it('Executes multiple mutations in the same mutation query and dispatches object with different states for each', async () => {
-    await client.mutate({
+    const { data } = await client.mutate({
       mutation: gql`
         mutation testResolve {
           testResolve
@@ -143,6 +143,12 @@ describe('Mutations', () => {
         },
       },
     })
+
+    expect(data).toHaveProperty('testResolve')
+    expect(data.testResolve).toBeTruthy()
+
+    expect(data).toHaveProperty('secondTestResolve')
+    expect(data.secondTestResolve).toBeTruthy()
 
     expect(latestState).toHaveProperty('testResolve')
     expect(latestState.testResolve.events).toBeTruthy()
