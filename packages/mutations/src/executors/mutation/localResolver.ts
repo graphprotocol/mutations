@@ -3,17 +3,15 @@ import {
   MutationQuery,
   MutationResult,
 } from '../../types'
-import { EventTypeMap } from '../../mutationState'
 import { isPromise } from '../../utils'
+import { EventTypeMap } from '../../mutationState'
 
 import {
   execute,
   FieldNode,
-  GraphQLError,
   GraphQLSchema,
   OperationDefinitionNode
 } from 'graphql'
-import { requiredSubselectionMessage } from 'graphql/validation/rules/ScalarLeafs'
 
 const localResolver: MutationExecutor = <
   TState,

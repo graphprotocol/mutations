@@ -1,7 +1,9 @@
+import { createMutationsLink } from '../../'
+import { createMutations, MutationContext } from '@graphprotocol/mutations'
+
 import { InMemoryCache } from 'apollo-cache-inmemory'
 import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
-import { createMutations, createMutationsLink, MutationContext } from '@graphprotocol/mutations'
 
 export const statesToPublish = [ 0.1, 0.2, 0.3 ]
 

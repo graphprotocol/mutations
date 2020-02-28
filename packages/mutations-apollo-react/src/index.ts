@@ -2,7 +2,10 @@ import { BaseMutationOptionsWithState, MutationTupleWithState } from './types'
 import {
   CoreEvents,
   CoreState,
+  ConfigGenerators,
   EventTypeMap,
+  MutationResult,
+  Mutations,
   MutationStates,
   MutationStatesSubject,
 } from '@graphprotocol/mutations'
@@ -13,7 +16,43 @@ import {
   MutationHookOptions,
 } from '@apollo/react-hooks'
 import { OperationVariables } from '@apollo/react-common'
+import { ApolloLink, Operation, Observable } from 'apollo-link'
 import { DocumentNode } from 'graphql'
+
+export const createMutationsLink = <
+  TConfig extends ConfigGenerators,
+  TState,
+  TEventMap extends EventTypeMap
+>({
+  mutations,
+}: {
+  mutations: Mutations<TConfig, TState, TEventMap>
+}): ApolloLink => {
+  return new ApolloLink((operation: Operation) => {
+    const setContext = (context: any) => {
+      return operation.setContext(context)
+    }
+
+    const getContext = () => {
+      return operation.getContext()
+    }
+
+    return new Observable(observer => {
+      mutations
+        .execute({
+          query: operation.query,
+          variables: operation.variables,
+          setContext: setContext,
+          getContext: getContext,
+        })
+        .then((result: MutationResult) => {
+          observer.next(result)
+          observer.complete()
+        })
+        .catch((e: Error) => observer.error(e))
+    })
+  })
+}
 
 export const useMutation = <
   TState = CoreState,

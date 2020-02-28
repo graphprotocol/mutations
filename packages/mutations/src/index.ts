@@ -1,7 +1,6 @@
 import {
   Mutations,
   MutationsModule,
-  MutationResult,
   MutationContext,
   MutationQuery,
   InternalMutationContext,
@@ -29,7 +28,6 @@ import {
 
 import { v4 } from 'uuid'
 import { combineLatest } from 'rxjs'
-import { ApolloLink, Operation, Observable } from 'apollo-link'
 import { buildSchema } from 'graphql'
 
 interface CreateMutationsOptions<
@@ -198,46 +196,18 @@ const createMutations = <
   }
 }
 
-const createMutationsLink = <
-  TConfig extends ConfigGenerators,
-  TState,
-  TEventMap extends EventTypeMap
->({
-  mutations,
-}: {
-  mutations: Mutations<TConfig, TState, TEventMap>
-}): ApolloLink => {
-  return new ApolloLink((operation: Operation) => {
-    const setContext = (context: any) => {
-      return operation.setContext(context)
-    }
+export { createMutations }
 
-    const getContext = () => {
-      return operation.getContext()
-    }
-
-    return new Observable(observer => {
-      mutations
-        .execute({
-          query: operation.query,
-          variables: operation.variables,
-          setContext: setContext,
-          getContext: getContext,
-        })
-        .then((result: MutationResult) => {
-          observer.next(result)
-          observer.complete()
-        })
-        .catch((e: Error) => observer.error(e))
-    })
-  })
-}
-
-export { createMutations, createMutationsLink }
-
-export { MutationContext, MutationResolvers, Mutations } from './types'
+export {
+  MutationContext,
+  MutationResolvers,
+  MutationResult,
+  Mutations
+} from './types'
 
 export { MutationExecutor } from './executors'
+
+export { ConfigGenerators } from './config'
 
 export {
   CoreState,
