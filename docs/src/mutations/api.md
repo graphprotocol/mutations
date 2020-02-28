@@ -24,7 +24,7 @@
 
 | Argument   |      Type      |  Description |
 |----------|:-------------:|:------|
-| `current` |  `MutationState` | Inmutable copy of current state |
+| `current` |  `MutationStates` | Inmutable copy of current state |
 
 #### Methods
 
