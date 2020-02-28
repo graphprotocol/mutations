@@ -1,13 +1,8 @@
-import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
-import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory'
 import 'cross-fetch/polyfill'
 
 import {
   createMutations,
-  createMutationsLink,
-  CoreEvents,
-  CoreState,
   Mutations,
   MutationContext,
   MutationStates,
@@ -68,10 +63,9 @@ const config = {
 }
 
 describe('Mutations', () => {
-  let client: ApolloClient<NormalizedCacheObject>
   let mutations: Mutations<Config>
-  let observer = new MutationStatesSubject({} as MutationStates<CoreState>)
-  let latestState: MutationStates<CoreState> = {}
+  let observer = new MutationStatesSubject({} as MutationStates)
+  let latestState: MutationStates = {}
 
   beforeAll(() => {
     mutations = createMutations({
@@ -87,42 +81,44 @@ describe('Mutations', () => {
       },
     })
 
-    const mutationLink = createMutationsLink({ mutations })
-
-    client = new ApolloClient({
-      link: mutationLink,
-      cache: new InMemoryCache(),
-    })
-
-    observer.subscribe((value: MutationStates<CoreState>) => {
+    observer.subscribe((value: MutationStates) => {
       latestState = value
     })
   })
 
-  it('Successfully creates mutations, link and executes mutations with it. No observer provided', async () => {
-    const { data } = await client.mutate({
-      mutation: gql`
+  const getSetContext = () => {
+    let context = { }
+    return {
+      setContext: (newContext: any) => {
+        context = newContext
+        return context
+      },
+      getContext: () => context
+    }
+  }
+
+  it('Successfully creates mutations and executes. No observer provided', async () => {
+    const { data } = await mutations.execute({
+      query: gql`
         mutation testResolve {
           testResolve
         }
       `,
+      ...getSetContext()
     })
 
     expect(data && data.testResolve).toEqual(true)
   })
 
   it('Correctly wraps resolvers and formats observer results to object with mutation name as key and state as value', async () => {
-    await client.mutate({
-      mutation: gql`
+    await mutations.execute({
+      query: gql`
         mutation testResolve {
           testResolve
         }
       `,
-      context: {
-        graph: {
-          rootSubject: observer,
-        },
-      },
+      ...getSetContext(),
+      stateSubject: observer,
     })
 
     expect(latestState).toHaveProperty('testResolve')
@@ -130,19 +126,20 @@ describe('Mutations', () => {
   })
 
   it('Executes multiple mutations in the same mutation query and dispatches object with different states for each', async () => {
-    const { data } = await client.mutate({
-      mutation: gql`
+    const { data } = await mutations.execute({
+      query: gql`
         mutation testResolve {
           testResolve
           secondTestResolve
         }
       `,
-      context: {
-        graph: {
-          rootSubject: observer,
-        },
-      },
+      ...getSetContext(),
+      stateSubject: observer,
     })
+
+    if (!data) {
+      throw Error('data is undefined...')
+    }
 
     expect(data).toHaveProperty('testResolve')
     expect(data.testResolve).toBeTruthy()
@@ -160,19 +157,20 @@ describe('Mutations', () => {
   })
 
   it('Executes the same mutation several times in the same query and dispatches object with different states for each', async () => {
-    const { data } = await client.mutate({
-      mutation: gql`
+    const { data } = await mutations.execute({
+      query: gql`
         mutation testResolve {
           testResolve
           testResolve
         }
       `,
-      context: {
-        graph: {
-          rootSubject: observer,
-        },
-      },
+      ...getSetContext(),
+      stateSubject: observer,
     })
+
+    if (!data) {
+      throw Error('data is undefined...')
+    }
 
     expect(data).toHaveProperty('testResolve')
     expect(data.testResolve).toBeTruthy()
@@ -210,125 +208,106 @@ describe('Mutations', () => {
       }
     })
 
-    const client = new ApolloClient({
-      link: createMutationsLink({ mutations }),
-      cache: new InMemoryCache(),
-    })
-
-    await client.mutate({
-      mutation: gql`
+    await mutations.execute({
+      query: gql`
         mutation testResolve {
           testResolve
         }
-      `
+      `,
+      ...getSetContext(),
     })
 
     expect(called).toBeTruthy()
   })
 
   it('Catches resolver execution errors', async () => {
-    try {
-      await client.mutate({
-        mutation: gql`
+      const { errors } = await mutations.execute({
+        query: gql`
           mutation testError {
             testError
           }
-        `
-      })
-      expect('This should never happen').toBe('')
-    } catch (e) {
-      expect(e.message).toBe(`GraphQL error: I'm an error...`)
-    }
-  })
-
-  describe('mutations.execute(...)', () => {
-    it('Correctly executes mutation without ApolloLink', async () => {
-      let context = {} as MutationContext<Config>
-
-      const { data } = await mutations.execute({
-        query: gql`
-          mutation testResolve {
-            testResolve
-          }
         `,
-        variables: {},
-        getContext: () => context,
-        setContext: (newContext: MutationContext<Config>) => {
-          context = newContext
-          return context
-        },
+        ...getSetContext(),
       })
 
-      expect(data && data.testResolve).toEqual(true)
-    })
-
-    it('State is correctly updated', async () => {
-      const observer = new MutationStatesSubject<CoreState, CoreEvents>({})
-
-      let context = {
-        graph: {
-          rootSubject: observer,
-        },
+      if (!errors) {
+        throw Error('errors is undefined...')
       }
 
-      let progress = 0
+      expect(errors[0].message).toBe(`I'm an error...`)
+  })
 
-      const subject = observer.subscribe((state: MutationStates<CoreState, CoreEvents>) => {
-        if (state.dispatchStateEvent) {
-          progress = state.dispatchStateEvent.progress
+  it('State is correctly updated', async () => {
+    const observer = new MutationStatesSubject({})
+
+    let context = {
+      graph: {
+        rootSubject: observer,
+      },
+    }
+
+    let progress = 0
+
+    const subject = observer.subscribe((state: MutationStates) => {
+      if (state.dispatchStateEvent) {
+        progress = state.dispatchStateEvent.progress
+      }
+    })
+
+    await mutations.execute({
+      query: gql`
+        mutation TestResolve {
+          dispatchStateEvent
         }
-      })
-
-      await mutations.execute({
-        query: gql`
-          mutation TestResolve {
-            dispatchStateEvent
-          }
-        `,
-        variables: {},
-        getContext: () => context,
-        setContext: (newContext: any) => {
-          context = newContext
-          return context
-        },
-        stateSubject: observer,
-      })
-
-      expect(progress).toEqual(.5)
-      subject.unsubscribe()
+      `,
+      variables: {},
+      getContext: () => context,
+      setContext: (newContext: any) => {
+        context = newContext
+        return context
+      },
+      stateSubject: observer,
     })
 
-    it('Correctly queries using the remote executor', async () => {
-      let context = {} as MutationContext<Config>
+    expect(progress).toEqual(.5)
+    subject.unsubscribe()
+  })
 
-      const { data } = await mutations.execute({
-        query: gql`
-          mutation testQuery {
-            testQuery
-          }
-        `,
-        variables: {},
-        getContext: () => context,
-        setContext: (newContext: MutationContext<Config>) => {
-          context = newContext
-          return context
-        },
-      })
+  it('Correctly queries using the remote executor', async () => {
+    let context = {} as MutationContext<Config>
 
-      expect(data && data.testQuery).toEqual(true)
+    const { data } = await mutations.execute({
+      query: gql`
+        mutation testQuery {
+          testQuery
+        }
+      `,
+      variables: {},
+      getContext: () => context,
+      setContext: (newContext: MutationContext<Config>) => {
+        context = newContext
+        return context
+      },
     })
+
+    expect(data && data.testQuery).toEqual(true)
   })
 
   describe('mutations.configure(...)', () => {
     it('Correctly reconfigures the mutation module', async () => {
       {
-        const { data } = await client.mutate({
-          mutation: gql`
+        const { data } = await mutations.execute({
+          query: gql`
             mutation testConfig {
               testConfig
             }
           `,
+          ...getSetContext(),
         })
+
+        if (!data) {
+          throw Error('data is undefined...')
+        }
 
         expect(data.testConfig).toEqual('...')
       }
@@ -338,13 +317,18 @@ describe('Mutations', () => {
       })
 
       {
-        const { data } = await client.mutate({
-          mutation: gql`
+        const { data } = await mutations.execute({
+          query: gql`
             mutation testConfig {
               testConfig
             }
           `,
+          ...getSetContext(),
         })
+
+        if (!data) {
+          throw Error('data is undefined...')
+        }
 
         expect(data.testConfig).toEqual('foo')
       }
