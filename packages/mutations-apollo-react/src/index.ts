@@ -49,7 +49,6 @@ export const createMutationsLink = <
           observer.next(result)
           observer.complete()
         })
-        .catch((e: Error) => observer.error(e))
     })
   })
 }

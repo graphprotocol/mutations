@@ -53,7 +53,6 @@ class StateUpdater<TState, TEventMap extends EventTypeMap> {
 
     // Call all relevant reducers
     const coreReducers = core.reducers as any
-    const coreReducer = core.reducer
     const extReducers = this.ext?.reducers as any
     const extReducer = this.ext?.reducer
 
@@ -62,13 +61,6 @@ class StateUpdater<TState, TEventMap extends EventTypeMap> {
         coreReducers[event.name],
         cloneDeep(this.state),
         payload,
-      )
-      this.state = merge(this.state, coreStatePartial)
-    } else if (coreReducer) {
-      const coreStatePartial = await executeMaybeAsyncFunction(
-        coreReducer,
-        cloneDeep(this.state),
-        event
       )
       this.state = merge(this.state, coreStatePartial)
     }

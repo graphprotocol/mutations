@@ -11,7 +11,7 @@ import gql from 'graphql-tag'
 
 let link: ApolloLink
 
-describe('RemoteResolver', () => {
+describe('Query remoteResolver', () => {
   beforeAll(() => {
     link = new ApolloLink(
       (operation: Operation) =>
