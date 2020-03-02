@@ -1,5 +1,13 @@
 # API Reference
 
+## Functions
+
+### `createMutationsLink`
+
+| Argument   |      Type      |  Description |
+|----------|:-------------:|:------|
+| `mutations` |  `Mutations` | Mutations object, returned from `createMutations` function |
+
 ## Hooks
 
 ### `useMutation`
