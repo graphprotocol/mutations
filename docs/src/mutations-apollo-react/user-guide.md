@@ -39,9 +39,9 @@ const client = new ApolloClient({
 
 At this point, you have a fully functional ApolloClient that can be used to send `query` and `mutation` queries, the same way you would within a web2 GraphQL application.
 
-## useMutation hook
+## `useMutation(...)` hook
 
-Developers can just import `useMutation` from the 'mutations-apollo-react' package, and consuming the state object can be done like so:
+Developers can just import `useMutation` from the `@graphprotocol/mutations-apollo-react` package, and consuming the state object can be done like so:
 
 ```ts
 import { useMutation } from '@graphprotocol/mutations-apollo-react'
@@ -58,7 +58,7 @@ const Component = () => {
   return (
     {loading ?
       <div>state.myMutation.progress</div> :
-      <div>data.value</div>
+      <div>data.myMutation</div>
     }
   )
 }
@@ -82,14 +82,8 @@ const Component = () => {
   return (
     {loading ? 
       <div>state.myMutation.myValue</div> :
-      <div>data.value</div>
+      <div>data.myMutation</div>
     }
-
-    <Mutation mutation={MY_MUTATION}>
-    {(exec, { data, loading, state: MutationState<State> }) => (
-      ...
-    )}
-    </Mutation>
   )
 }
 ```
@@ -162,7 +156,7 @@ const Component = () => {
         <div>state.myMutation.myValue</div>
         <div>state.myMutation_1.myValue</div>
       </> :
-      <div>data.value</div>
+      <div>data.myMutation</div>
     }
   )
 }
