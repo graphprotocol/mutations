@@ -8,13 +8,13 @@ import {
 
 const schema = `
   type Mutation {
-    example
+    example: Boolean!
   }
 `
 
 const resolvers = {
   Mutation: {
-    example: () => {},
+    example: () => true,
   },
 }
 

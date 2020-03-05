@@ -4,8 +4,7 @@ import {
   MutationContext,
   MutationQuery,
   InternalMutationContext,
-  Query,
-  QueryClient,
+  QueryExecutor,
 } from './types'
 import { ConfigGenerators, ConfigArguments, ConfigProperties } from './config'
 import { validateConfig, createConfig } from './config'
@@ -19,12 +18,7 @@ import {
   MutationStateSubject,
 } from './mutationState'
 import { getUniqueMutations } from './utils'
-import {
-  execLocalMutation,
-  execRemoteQuery,
-  MutationExecutor,
-  QueryExecutor
-} from './executors'
+import { execute } from './execute'
 
 import { v4 } from 'uuid'
 import { combineLatest } from 'rxjs'
@@ -36,10 +30,7 @@ interface CreateMutationsOptions<
   TEventMap extends EventTypeMap
 > {
   mutations: MutationsModule<TConfig, TState, TEventMap>
-  subgraph: string
-  node: string
   config: ConfigArguments<TConfig>
-  mutationExecutor?: MutationExecutor
   queryExecutor?: QueryExecutor
 }
 
@@ -50,7 +41,7 @@ const createMutations = <
 >(
   options: CreateMutationsOptions<TConfig, TState, TEventMap>,
 ): Mutations<TConfig, TState, TEventMap> => {
-  const { mutations, subgraph, node, config, mutationExecutor } = options
+  const { mutations, config } = options
 
   // Validate that the configuration getters and setters match 1:1
   validateConfig(config, mutations.config)
@@ -61,9 +52,9 @@ const createMutations = <
   // Build the schema from the source
   let schema = buildSchema(mutations.schema)
 
-  // If there's no Query type, add it to avoid execution errors
+  // If there's no Query type, add one to avoid execution errors
   if (!schema.getQueryType()) {
-    const schemaWithQuery = mutations.schema + `type Query { dummy: String }`
+    const schemaWithQuery = mutations.schema + `type Query { _: String }`
     schema = buildSchema(schemaWithQuery)
   }
 
@@ -142,9 +133,7 @@ const createMutations = <
   }
 
   return {
-    execute: async (
-      mutationQuery: MutationQuery<TState, TEventMap>,
-    ) => {
+    execute: async (mutationQuery: MutationQuery<TState, TEventMap>) => {
       const { setContext, getContext, query, stateSubject } = mutationQuery
 
       // Create the config instance during
@@ -155,18 +144,11 @@ const createMutations = <
 
       const context = getContext() as InternalMutationContext<TConfig, TState, TEventMap>
 
-      // If context.client doesn't exist (ApolloClient only feature), create
-      // our own query handler for the mutation resolvers to use
-      const client: QueryClient = context.client ? context.client : {
-        query: (query: Query) => execRemoteQuery(query, `${node}/subgraphs/name/${subgraph}`)
-      }
-
       const graphContext: InternalMutationContext<TConfig, TState, TEventMap> = {
         graph: {
           config: configProperties,
           // This will get overridden by the wrapped resolver above
           state: {} as StateUpdater<TState, TEventMap>,
-          client,
           rootSubject: stateSubject ? stateSubject : context.graph?.rootSubject,
           mutationSubjects: [],
           mutationsCalled: getUniqueMutations(
@@ -183,11 +165,7 @@ const createMutations = <
       })
 
       // Execute the mutation
-      if (mutationExecutor) {
-        return await mutationExecutor(mutationQuery, schema)
-      } else {
-        return await execLocalMutation(mutationQuery, schema)
-      }
+      return await execute(mutationQuery, schema)
     },
     configure: async (config: ConfigArguments<TConfig>) => {
       validateConfig(config, mutations.config)
@@ -198,14 +176,7 @@ const createMutations = <
 
 export { createMutations }
 
-export {
-  MutationContext,
-  MutationResolvers,
-  MutationResult,
-  Mutations
-} from './types'
-
-export { MutationExecutor } from './executors'
+export { MutationContext, MutationResolvers, MutationResult, Mutations } from './types'
 
 export { ConfigGenerators } from './config'
 

@@ -34,7 +34,6 @@ export interface MutationContext<
   graph: {
     config: ConfigProperties<TConfig>
     state: StateUpdater<TState, TEventMap>
-    client: QueryClient
   }
 }
 
@@ -93,6 +92,4 @@ export interface Query {
 
 export type QueryResult = ExecutionResult
 
-export interface QueryClient {
-  query(query: Query): Promise<QueryResult>
-}
+export type QueryExecutor = (query: Query) => Promise<QueryResult>

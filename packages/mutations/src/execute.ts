@@ -1,29 +1,21 @@
-import { MutationExecutor } from '../types'
-import {
-  MutationQuery,
-  MutationResult,
-} from '../../types'
-import { isPromise } from '../../utils'
-import { EventTypeMap } from '../../mutationState'
+import { MutationQuery, MutationResult } from './types'
+import { isPromise } from './utils'
+import { EventTypeMap } from './mutationState'
 
 import {
-  execute,
+  execute as graphqlExecute,
   FieldNode,
   GraphQLSchema,
-  OperationDefinitionNode
+  OperationDefinitionNode,
 } from 'graphql'
 
-const localResolver: MutationExecutor = <
-  TState,
-  TEventMap extends EventTypeMap
->(
+const execute = <TState, TEventMap extends EventTypeMap>(
   query: MutationQuery<TState, TEventMap>,
   schema: GraphQLSchema,
 ): Promise<MutationResult> => {
   return new Promise(async (resolve, reject) => {
-
-    const results: MutationResult = { }
-    const mutationCount: { [mutation: string]: number } = { }
+    const results: MutationResult = {}
+    const mutationCount: { [mutation: string]: number } = {}
     const queryDefs = query.query.definitions
 
     // For each mutation query definition
@@ -47,7 +39,7 @@ const localResolver: MutationExecutor = <
         }
 
         if (!results.data) {
-          results.data = { }
+          results.data = {}
         }
 
         // Get the mutation name
@@ -71,7 +63,7 @@ const localResolver: MutationExecutor = <
         // one field at a time
         selectionSet.selections = [selection]
 
-        const result = execute({
+        const result = graphqlExecute({
           schema: schema,
           document: query.query,
           contextValue: query.getContext(),
@@ -103,4 +95,4 @@ const localResolver: MutationExecutor = <
   })
 }
 
-export default localResolver
+export { execute }

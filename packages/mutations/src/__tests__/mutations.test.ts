@@ -1,12 +1,7 @@
 import gql from 'graphql-tag'
 import 'cross-fetch/polyfill'
 
-import {
-  createMutations,
-  Mutations,
-  MutationContext,
-  MutationStates,
-} from '../'
+import { createMutations, Mutations, MutationContext, MutationStates } from '../'
 import { MutationStatesSubject } from '../mutationState'
 
 const schema = `
@@ -16,7 +11,6 @@ const schema = `
     dispatchStateEvent: Boolean!
     testConfig: String!
     testError: Boolean!
-    testQuery: Boolean!
   }
 `
 
@@ -35,7 +29,7 @@ const resolvers = {
       return true
     },
     dispatchStateEvent: async (_: any, __: any, context: MutationContext<Config>) => {
-      await context.graph.state.dispatch('PROGRESS_UPDATE', { value: .5 })
+      await context.graph.state.dispatch('PROGRESS_UPDATE', { value: 0.5 })
       return true
     },
     testConfig: (_: any, __: any, context: MutationContext<Config>) => {
@@ -43,22 +37,6 @@ const resolvers = {
     },
     testError: () => {
       throw Error(`I'm an error...`)
-    },
-    testQuery: async (_: any, __: any, context: MutationContext<Config>) => {
-      try {
-        await context.graph.client.query({
-          query: gql`
-            query testQuery {
-              testQuery {
-                id
-              }
-            }
-          `
-        })
-        return false
-      } catch (e) {
-        return e.message.indexOf('ECONNREFUSED') > -1
-      }
     },
   },
 }
@@ -80,8 +58,6 @@ describe('Mutations', () => {
         config,
         schema,
       },
-      subgraph: 'test',
-      node: 'http://localhost:5000',
       config: {
         value: '...',
       },
@@ -93,13 +69,13 @@ describe('Mutations', () => {
   })
 
   const getSetContext = () => {
-    let context = { }
+    let context = {}
     return {
       setContext: (newContext: any) => {
         context = newContext
         return context
       },
-      getContext: () => context
+      getContext: () => context,
     }
   }
 
@@ -110,7 +86,7 @@ describe('Mutations', () => {
           testResolve
         }
       `,
-      ...getSetContext()
+      ...getSetContext(),
     })
 
     expect(data && data.testResolve).toEqual(true)
@@ -124,8 +100,6 @@ describe('Mutations', () => {
           config,
           schema: invalidSchema,
         },
-        subgraph: 'test',
-        node: 'http://localhost:5000',
         config: {
           value: '...',
         },
@@ -134,7 +108,7 @@ describe('Mutations', () => {
       expect('').toBe('This should never happen...')
     } catch (e) {
       expect(e.message).toBe(
-        `type Mutation { ... } missing from the mutations module's schema`
+        `type Mutation { ... } missing from the mutations module's schema`,
       )
     }
   })
@@ -216,54 +190,21 @@ describe('Mutations', () => {
     expect(latestState.testResolve).not.toEqual(latestState.testResolve_1)
   })
 
-  it('Calls custom mutationExecutor', async () => {
-    let called = false
-    const mutations = createMutations({
-      mutations: {
-        resolvers,
-        config,
-        schema,
-      },
-      subgraph: '',
-      node: '',
-      config: {
-        value: '...',
-      },
-      mutationExecutor: (query) => {
-        called = true
-        return new Promise((resolve) => resolve({
-          data: { testResolve: true }
-        }))
-      }
-    })
-
-    await mutations.execute({
+  it('Catches resolver execution errors', async () => {
+    const { errors } = await mutations.execute({
       query: gql`
-        mutation testResolve {
-          testResolve
+        mutation testError {
+          testError
         }
       `,
       ...getSetContext(),
     })
 
-    expect(called).toBeTruthy()
-  })
+    if (!errors) {
+      throw Error('errors is undefined...')
+    }
 
-  it('Catches resolver execution errors', async () => {
-      const { errors } = await mutations.execute({
-        query: gql`
-          mutation testError {
-            testError
-          }
-        `,
-        ...getSetContext(),
-      })
-
-      if (!errors) {
-        throw Error('errors is undefined...')
-      }
-
-      expect(errors[0].message).toBe(`I'm an error...`)
+    expect(errors[0].message).toBe(`I'm an error...`)
   })
 
   it('State is correctly updated', async () => {
@@ -298,28 +239,8 @@ describe('Mutations', () => {
       stateSubject: observer,
     })
 
-    expect(progress).toEqual(.5)
+    expect(progress).toEqual(0.5)
     subject.unsubscribe()
-  })
-
-  it('Correctly queries using the remote executor', async () => {
-    let context = {} as MutationContext<Config>
-
-    const { data } = await mutations.execute({
-      query: gql`
-        mutation testQuery {
-          testQuery
-        }
-      `,
-      variables: {},
-      getContext: () => context,
-      setContext: (newContext: MutationContext<Config>) => {
-        context = newContext
-        return context
-      },
-    })
-
-    expect(data && data.testQuery).toEqual(true)
   })
 
   describe('mutations.configure(...)', () => {

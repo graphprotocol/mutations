@@ -76,7 +76,7 @@ export const useMutation = <
         ...options,
         context: {
           ...options.context,
-          ...graphContext
+          ...graphContext,
         },
       }
     : {

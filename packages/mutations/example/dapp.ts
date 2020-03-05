@@ -12,8 +12,6 @@ import gql from 'graphql-tag'
 // Create Executable & Executable Mutations
 const mutations = createMutations({
   mutations: exampleMutations,
-  subgraph: 'my-subgraph',
-  node: 'https://graph-node.io',
   config: {
     a: async () => '',
     b: 3,
